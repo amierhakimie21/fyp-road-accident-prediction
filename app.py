@@ -1,6 +1,6 @@
 # =====================================================
 # ROAD ACCIDENT SEVERITY PREDICTION SYSTEM
-# FINAL • FYP-SAFE • STREAMLIT CLOUD READY
+# FINAL • STREAMLIT CLOUD READY • FYP SAFE
 # =====================================================
 
 import streamlit as st
@@ -17,23 +17,51 @@ st.set_page_config(
     layout="centered"
 )
 
+# -----------------------------------------------------
+# BACK BUTTON (TOP)
+# -----------------------------------------------------
+st.markdown(
+    """
+    <div style="margin-bottom:20px;">
+        <a href="https://accidentanalysis-da.vercel.app/predict.html"
+           target="_self"
+           style="
+             display:inline-block;
+             padding:10px 16px;
+             background-color:#f3f4f6;
+             border-radius:12px;
+             text-decoration:none;
+             color:#111827;
+             font-weight:600;
+             border:1px solid #e5e7eb;
+           ">
+           ⬅ Back to Main Website
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# -----------------------------------------------------
+# TITLE
+# -----------------------------------------------------
 st.title("🚗 Road Accident Severity Prediction System")
 st.write(
     "This system predicts **road accident severity** "
-    "(Slight, Serious, Fatal) based on selected "
-    "driving and environmental conditions."
+    "(Slight, Serious, Fatal) based on driving and "
+    "environmental conditions."
 )
 
 st.divider()
 
 # -----------------------------------------------------
-# LOAD MODEL (ONLY ONE MODEL)
+# LOAD MODEL
 # -----------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "accident_severity_model.pkl")
 
 if not os.path.exists(MODEL_PATH):
-    st.error("❌ Required model file not found.")
+    st.error("❌ Model file not found. Please check deployment files.")
     st.stop()
 
 model = joblib.load(MODEL_PATH)
@@ -90,7 +118,6 @@ if st.button("🔍 Predict Accident Severity"):
         "road_surface_conditions": "Dry"
     }])
 
-    # Prediction
     prediction = model.predict(input_df)[0]
     probabilities = model.predict_proba(input_df)[0]
     confidence = probabilities.max() * 100
@@ -109,23 +136,18 @@ if st.button("🔍 Predict Accident Severity"):
 
     st.metric("Prediction Confidence", f"{confidence:.1f}%")
 
-    if confidence < 50:
-        st.info("ℹ️ Prediction confidence is relatively low. Interpret results with caution.")
-
     # -------------------------------------------------
-    # PROBABILITY CHART (CORRECT COLORS)
+    # PROBABILITY CHART (COLOR CODED)
     # -------------------------------------------------
-    st.subheader("📈 Severity Probability Distribution")
-
     prob_df = pd.DataFrame({
         "Severity Level": model.classes_,
         "Probability (%)": probabilities * 100
     })
 
     severity_colors = {
-        "Slight": "#22c55e",   # Green
-        "Serious": "#f59e0b",  # Orange
-        "Fatal": "#dc2626"     # Red
+        "Slight": "#22c55e",
+        "Serious": "#f59e0b",
+        "Fatal": "#dc2626"
     }
 
     chart = alt.Chart(prob_df).mark_bar(
@@ -146,9 +168,7 @@ if st.button("🔍 Predict Accident Severity"):
             alt.Tooltip("Severity Level:N"),
             alt.Tooltip("Probability (%):Q", format=".1f")
         ]
-    ).properties(
-        height=260
-    )
+    ).properties(height=260)
 
     st.altair_chart(chart, use_container_width=True)
 
@@ -175,7 +195,7 @@ if st.button("🔍 Predict Accident Severity"):
         st.write("• No major risk factors detected")
 
     # -------------------------------------------------
-    # SAFETY ADVICE
+    # SAFETY RECOMMENDATIONS
     # -------------------------------------------------
     st.subheader("✅ Safety Recommendations")
 
@@ -183,15 +203,18 @@ if st.button("🔍 Predict Accident Severity"):
         st.write("• Maintain safe driving behaviour")
         st.write("• Continue to follow traffic regulations")
     elif prediction == "Serious":
-        st.write("• Reduce driving speed")
-        st.write("• Increase driving attention")
-        st.write("• Keep a safe distance from other vehicles")
+        st.write("• Reduce speed")
+        st.write("• Increase attention while driving")
+        st.write("• Maintain a safe distance from other vehicles")
     else:
-        st.write("• Avoid unnecessary travel")
+        st.write("• Avoid unnecessary travel if possible")
         st.write("• Drive at reduced speed with extreme caution")
-        st.write("• Follow all road safety guidelines")
+        st.write("• Follow all traffic safety guidelines")
 
+    # -------------------------------------------------
+    # DISCLAIMER
+    # -------------------------------------------------
     st.caption(
-        "⚠️ This system is developed for decision-support purposes only "
+        "⚠️ This system is intended for academic and decision-support purposes only "
         "and does not guarantee accident prevention."
     )
