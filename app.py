@@ -18,25 +18,62 @@ st.set_page_config(
 )
 
 # -----------------------------------------------------
-# BACK BUTTON (TOP)
+# THEME STYLE (MATCH WEBSITE CSS)
 # -----------------------------------------------------
 st.markdown(
     """
-    <div style="margin-bottom:20px;">
-        <a href="https://accidentanalysis-da.vercel.app/predict.html"
-           target="_self"
-           style="
-             display:inline-block;
-             padding:10px 16px;
-             background-color:#f3f4f6;
-             border-radius:12px;
-             text-decoration:none;
-             color:#111827;
-             font-weight:600;
-             border:1px solid #e5e7eb;
-           ">
-           ⬅ Back to Main Website
-        </a>
+    <style>
+    :root{
+      --bg:#fafafa;
+      --panel:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --accent:#e07a25;
+      --accent-soft:#fde8d6;
+      --radius:24px;
+    }
+
+    html, body{
+      background:var(--bg);
+      color:var(--text);
+      font-family:Inter, system-ui, Arial;
+    }
+
+    .back-btn{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 18px;
+      border-radius:999px;
+      font-weight:600;
+      font-size:14px;
+      color:var(--text);
+      text-decoration:none;
+      background:var(--panel);
+      border:1px solid #e5e7eb;
+      transition:.25s ease;
+    }
+
+    .back-btn:hover{
+      background:var(--accent-soft);
+      color:var(--accent);
+      transform:translateY(-1px);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# -----------------------------------------------------
+# BACK BUTTON (TOP, THEME STYLE)
+# -----------------------------------------------------
+st.markdown(
+    """
+    <div style="margin-bottom:28px;">
+      <a href="https://accidentanalysis-da.vercel.app/predict.html"
+         class="back-btn">
+         ← Back to Prediction Page
+      </a>
     </div>
     """,
     unsafe_allow_html=True
@@ -137,7 +174,7 @@ if st.button("🔍 Predict Accident Severity"):
     st.metric("Prediction Confidence", f"{confidence:.1f}%")
 
     # -------------------------------------------------
-    # PROBABILITY CHART (COLOR CODED)
+    # PROBABILITY CHART (THEME COLORS)
     # -------------------------------------------------
     prob_df = pd.DataFrame({
         "Severity Level": model.classes_,
