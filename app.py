@@ -1,0 +1,197 @@
+# =====================================================
+# ROAD ACCIDENT SEVERITY PREDICTION SYSTEM
+# FINAL • FYP-SAFE • STREAMLIT CLOUD READY
+# =====================================================
+
+import streamlit as st
+import pandas as pd
+import altair as alt
+import os
+import joblib
+
+# -----------------------------------------------------
+# PAGE CONFIG
+# -----------------------------------------------------
+st.set_page_config(
+    page_title="Road Accident Severity Prediction",
+    layout="centered"
+)
+
+st.title("🚗 Road Accident Severity Prediction System")
+st.write(
+    "This system predicts **road accident severity** "
+    "(Slight, Serious, Fatal) based on selected "
+    "driving and environmental conditions."
+)
+
+st.divider()
+
+# -----------------------------------------------------
+# LOAD MODEL (ONLY ONE MODEL)
+# -----------------------------------------------------
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "accident_severity_model.pkl")
+
+if not os.path.exists(MODEL_PATH):
+    st.error("❌ Required model file not found.")
+    st.stop()
+
+model = joblib.load(MODEL_PATH)
+
+# -----------------------------------------------------
+# USER INPUT
+# -----------------------------------------------------
+st.subheader("📝 Driving Conditions")
+
+day_of_week = st.selectbox(
+    "Day of Week",
+    [
+        "Monday", "Tuesday", "Wednesday",
+        "Thursday", "Friday", "Saturday", "Sunday"
+    ]
+)
+
+hour = st.slider("Time of Day (Hour)", 0, 23, 12)
+
+weather_conditions = st.selectbox(
+    "Weather Condition",
+    ["Fine", "Rain", "Fog", "Snow"]
+)
+
+speed_limit = st.selectbox(
+    "Speed Limit (km/h)",
+    [30, 40, 50, 60, 70, 80, 90, 100, 110]
+)
+
+urban_or_rural_area = st.selectbox(
+    "Road Environment",
+    ["Urban", "Rural"]
+)
+
+st.divider()
+
+# -----------------------------------------------------
+# PREDICTION
+# -----------------------------------------------------
+if st.button("🔍 Predict Accident Severity"):
+
+    light_conditions = "Darkness" if hour >= 18 or hour <= 5 else "Daylight"
+
+    input_df = pd.DataFrame([{
+        "year": 2024,
+        "month": 6,
+        "day_of_week": day_of_week,
+        "hour": hour,
+        "weather_conditions": weather_conditions,
+        "light_conditions": light_conditions,
+        "road_type": "Single carriageway",
+        "speed_limit": speed_limit,
+        "urban_or_rural_area": urban_or_rural_area,
+        "road_surface_conditions": "Dry"
+    }])
+
+    # Prediction
+    prediction = model.predict(input_df)[0]
+    probabilities = model.predict_proba(input_df)[0]
+    confidence = probabilities.max() * 100
+
+    # -------------------------------------------------
+    # RESULT
+    # -------------------------------------------------
+    st.subheader("📊 Prediction Result")
+
+    if prediction == "Slight":
+        st.success("🟢 SLIGHT Accident Severity")
+    elif prediction == "Serious":
+        st.warning("🟠 SERIOUS Accident Severity")
+    else:
+        st.error("🔴 FATAL Accident Severity")
+
+    st.metric("Prediction Confidence", f"{confidence:.1f}%")
+
+    if confidence < 50:
+        st.info("ℹ️ Prediction confidence is relatively low. Interpret results with caution.")
+
+    # -------------------------------------------------
+    # PROBABILITY CHART (CORRECT COLORS)
+    # -------------------------------------------------
+    st.subheader("📈 Severity Probability Distribution")
+
+    prob_df = pd.DataFrame({
+        "Severity Level": model.classes_,
+        "Probability (%)": probabilities * 100
+    })
+
+    severity_colors = {
+        "Slight": "#22c55e",   # Green
+        "Serious": "#f59e0b",  # Orange
+        "Fatal": "#dc2626"     # Red
+    }
+
+    chart = alt.Chart(prob_df).mark_bar(
+        stroke="black",
+        strokeWidth=1
+    ).encode(
+        x=alt.X("Severity Level:N", title="Severity Level"),
+        y=alt.Y("Probability (%):Q", title="Probability (%)"),
+        color=alt.Color(
+            "Severity Level:N",
+            scale=alt.Scale(
+                domain=list(severity_colors.keys()),
+                range=list(severity_colors.values())
+            ),
+            legend=alt.Legend(title="Severity Level")
+        ),
+        tooltip=[
+            alt.Tooltip("Severity Level:N"),
+            alt.Tooltip("Probability (%):Q", format=".1f")
+        ]
+    ).properties(
+        height=260
+    )
+
+    st.altair_chart(chart, use_container_width=True)
+
+    # -------------------------------------------------
+    # EXPLANATION
+    # -------------------------------------------------
+    st.subheader("❓ Why this result?")
+
+    reasons = []
+
+    if speed_limit >= 80:
+        reasons.append("High driving speed")
+    if hour >= 18 or hour <= 5:
+        reasons.append("Night-time driving")
+    if weather_conditions in ["Rain", "Fog", "Snow"]:
+        reasons.append("Adverse weather conditions")
+    if urban_or_rural_area == "Rural":
+        reasons.append("Rural road environment")
+
+    if reasons:
+        for r in reasons:
+            st.write(f"• {r}")
+    else:
+        st.write("• No major risk factors detected")
+
+    # -------------------------------------------------
+    # SAFETY ADVICE
+    # -------------------------------------------------
+    st.subheader("✅ Safety Recommendations")
+
+    if prediction == "Slight":
+        st.write("• Maintain safe driving behaviour")
+        st.write("• Continue to follow traffic regulations")
+    elif prediction == "Serious":
+        st.write("• Reduce driving speed")
+        st.write("• Increase driving attention")
+        st.write("• Keep a safe distance from other vehicles")
+    else:
+        st.write("• Avoid unnecessary travel")
+        st.write("• Drive at reduced speed with extreme caution")
+        st.write("• Follow all road safety guidelines")
+
+    st.caption(
+        "⚠️ This system is developed for decision-support purposes only "
+        "and does not guarantee accident prevention."
+    )
